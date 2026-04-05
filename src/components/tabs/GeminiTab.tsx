@@ -87,7 +87,7 @@ export function GeminiTab({
                     remarkPlugins={[remarkGfm]} 
                     rehypePlugins={[rehypeRaw]}
                     components={{
-                      img: ({ node, ...props }) => (
+                      img: ({ node: _node, ...props }) => (
                         <img 
                           {...props} 
                           referrerPolicy="no-referrer" 

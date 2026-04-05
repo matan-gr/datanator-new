@@ -2,16 +2,11 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { v4 as uuidv4 } from 'uuid';
-import { initDb, getDb, closeDb } from './src/server/db/sqlite.ts';
+import { initDb, closeDb } from './src/server/db/sqlite.ts';
 import { syncConfiguration } from './src/server/config/sync.ts';
 import { apiRouter } from './src/server/api/routes.ts';
 import { flushActiveIndexes } from './src/server/etl/pipeline.ts';
 import { flushLogs } from './src/server/utils/logger.ts';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
@@ -68,7 +63,7 @@ async function startServer() {
     });
 
     // Global API error handler
-    app.use('/api/v1', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    app.use('/api/v1', (err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
       console.error('API Error:', err);
       res.status(500).json({
         success: false,

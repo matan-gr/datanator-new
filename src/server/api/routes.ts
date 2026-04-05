@@ -398,7 +398,7 @@ apiRouter.get('/logs', async (req, res) => {
     allFiles.sort((a, b) => {
       try {
         return fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs;
-      } catch (e) {
+      } catch (_e) {
         return 0;
       }
     });
@@ -447,7 +447,7 @@ apiRouter.get('/logs', async (req, res) => {
           }
           
           fileLogs.push(appLog);
-        } catch (e) {
+        } catch (_e) {
           // ignore parse errors
         }
       }
@@ -466,7 +466,6 @@ apiRouter.get('/logs', async (req, res) => {
 // Get system status
 apiRouter.get('/system/status', async (req, res) => {
   try {
-    const db = getDb();
     const dataDirBase = process.env.DATA_DIR || path.join(process.cwd(), 'data');
     const dbPath = path.join(dataDirBase, 'gcp-datanator.db');
     
@@ -567,7 +566,7 @@ apiRouter.post('/system/purge', async (req, res) => {
           // Don't delete the currently active log file if possible, or just ignore errors
           try {
             fs.unlinkSync(path.join(logDir, file));
-          } catch (e) {
+          } catch (_e) {
             // ignore
           }
         }

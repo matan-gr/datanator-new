@@ -1,16 +1,9 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
+import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Button, buttonVariants } from './ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ScrollArea } from './ui/scroll-area';
-import { Separator } from './ui/separator';
 import { toast } from 'sonner';
-import { Play, Database, RefreshCw, AlertCircle, CheckCircle2, Clock, ExternalLink, Activity, Search, ChevronLeft, ChevronRight, FileText, Download, Settings, ShieldCheck, Server, Terminal, ListFilter, Sparkles, Moon, Sun, BookOpen, Eye, X, Cloud, AlertTriangle, XCircle, Pencil, Code, Zap, Calendar, Hash } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw';
+import { Play, Database, RefreshCw, Activity, FileText, Settings, ShieldCheck, Sparkles, Moon, Sun, BookOpen, X, Cloud, AlertTriangle, Zap, Calendar, Hash } from 'lucide-react';
 import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Label } from './ui/label';
@@ -18,10 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { motion, AnimatePresence } from 'motion/react';
-import { GoogleGenAI } from "@google/genai";
 import { useTheme } from 'next-themes';
 import mermaid from 'mermaid';
-import type { SyncRun, SourceMetric, AppLog, OutputFile } from '../types/dashboard';
 import { StatusBadge, StatusChip } from './ui-parts/StatusBadge';
 
 import { useSyncRuns } from '../hooks/useSyncRuns';
@@ -44,76 +35,20 @@ import { ConsoleTab } from './tabs/ConsoleTab';
 import { NetworkTab } from './tabs/NetworkTab';
 import { SettingsTab } from './tabs/SettingsTab';
 
-const Mermaid = React.memo(({ chart }: { chart: string }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [svg, setSvg] = useState<string>('');
-  const { theme } = useTheme();
-  // Use a stable ID to prevent re-rendering issues
-  const id = React.useId();
+import { OverviewTab } from './tabs/OverviewTab';
 
-
-  useEffect(() => {
-    let isMounted = true;
-    mermaid.initialize({ 
-      startOnLoad: false, 
-      theme: theme === 'dark' ? 'dark' : 'default',
-      securityLevel: 'loose',
-      fontFamily: 'inherit',
-      themeVariables: {
-        fontSize: '12px',
-      }
-    });
-    
-    const renderChart = async () => {
-      try {
-        const { svg: renderedSvg } = await mermaid.render(id, chart);
-        if (isMounted) {
-          setSvg(renderedSvg);
-        }
-      } catch (e) {
-        console.error('Mermaid rendering failed', e);
-      }
-    };
-    
-    if (chart) renderChart();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [chart, theme, id]);
-
-  if (!svg) {
-    return <div className="flex justify-center my-6 animate-pulse bg-muted h-64 rounded-md w-full" />;
-  }
-
-  return <div ref={containerRef} className="flex justify-center my-6 w-full overflow-hidden [&>svg]:max-w-full [&>svg]:h-auto" dangerouslySetInnerHTML={{ __html: svg }} />;
-});
-
-// Define components outside to prevent recreation on every render
 const markdownComponents = {
-  img: ({ node, ...props }: any) => (
+  img: ({ node: _node, ...props }: any) => (
     <img 
       {...props} 
       referrerPolicy="no-referrer" 
-      className="max-w-full rounded-md border border-border shadow-sm my-4"
+      className="max-w-full rounded-md border border-border shadow-sm my-6"
     />
-  ),
-  code: ({ node, inline, className, children, ...props }: any) => {
-    const match = /language-(\w+)/.exec(className || '');
-    if (!inline && match && match[1] === 'mermaid') {
-      return <Mermaid chart={String(children).replace(/\n$/, '')} />;
-    }
-    return (
-      <code className={className} {...props}>
-        {children}
-      </code>
-    );
-  }
+  )
 };
 
 export default function Dashboard() {
- const { theme, setTheme } = useTheme();
-
+  const { theme, setTheme } = useTheme();
   const { runs, syncRunsPage, setSyncRunsPage, syncRunsTotal, loading, syncing, triggerSync, refreshRuns: fetchRuns } = useSyncRuns();
   const { debugLogs, debugPage, setDebugPage, debugTotal, debugLevel, setDebugLevel, debugSearch, setDebugSearch, debugLoading, selectedLog, setSelectedLog, autoScroll, setAutoScroll, debugScrollRef, refreshLogs: fetchDebugLogs } = useSystemLogs();
   const { networkLogs, networkPage, setNetworkPage, networkTotal, networkSearch, setNetworkSearch, networkLoading, selectedNetworkLog, setSelectedNetworkLog, refreshNetworkLogs: fetchNetworkLogs } = useNetworkLogs();
@@ -225,32 +160,8 @@ export default function Dashboard() {
  }
  };
 
- const handleDownloadAll = () => {
+  const handleDownloadAll = () => {
  window.open('/api/v1/files-download-all', '_blank');
- };
-
- const exportSyncRunsCsv = () => {
- if (runs.length === 0) return;
- const headers = ['ID', 'Timestamp', 'Status', 'Trigger Type', 'Items Parsed', 'Files Generated', 'Error Summary'];
- const rows = runs.map(r => [
- r.id,
- new Date(r.timestamp).toISOString(),
- r.status,
- r.triggerType,
- r.totalItemsParsed,
- r.totalFilesGenerated,
- r.errorSummary ? `"${r.errorSummary.replace(/"/g, '""')}"` : ''
- ]);
- 
- const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
- const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
- const url = URL.createObjectURL(blob);
- const link = document.createElement('a');
- link.setAttribute('href', url);
- link.setAttribute('download', `sync_runs_${new Date().toISOString().split('T')[0]}.csv`);
- document.body.appendChild(link);
- link.click();
- document.body.removeChild(link);
  };
 
  const fetchJson = async (url: string, options?: RequestInit, retries = 3) => {
@@ -407,22 +318,6 @@ export default function Dashboard() {
  fetchSystemStatus();
  }
  }, [activeTab]);
-
- const chartData = useMemo(() => {
- return [...runs].reverse().map(run => ({
- time: new Date(run.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
- items: run.totalItemsParsed,
- status: run.status
- }));
- }, [runs]);
-
-   const getStatusBadge = (status: string) => {
- return <StatusBadge status={status} />;
- };
-
- const getStatusChip = (status: string) => {
- return <StatusChip status={status} />;
- };
 
  return (
  <div className="dashboard-container">
@@ -680,8 +575,8 @@ export default function Dashboard() {
  setShowAddSourceDialog(false);
  setNewSource({ name: '', url: '', type: 'rss' });
  fetchAllData();
- } catch (err) {
- toast.error(err instanceof Error ? err.message : 'Failed to add source');
+ } catch (error) {
+ toast.error(error instanceof Error ? error.message : 'Failed to add source');
  }
  }}>Add Source</Button>
  </div>
@@ -738,8 +633,8 @@ export default function Dashboard() {
  setShowEditSourceDialog(false);
  setEditingSource(null);
  fetchAllData();
- } catch (err) {
- toast.error(err instanceof Error ? err.message : 'Failed to update source');
+ } catch (error) {
+ toast.error(error instanceof Error ? error.message : 'Failed to update source');
  }
  }}>Save Changes</Button>
  </div>
@@ -762,7 +657,7 @@ export default function Dashboard() {
  await fetchJson(`/api/v1/sources/${sourceToDelete}`, { method: 'DELETE' });
  toast.success('Source deleted successfully');
  fetchAllData();
- } catch (err) {
+ } catch (_error) {
  toast.error('Failed to delete source');
  }
  }

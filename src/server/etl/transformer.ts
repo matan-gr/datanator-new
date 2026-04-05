@@ -10,7 +10,7 @@ export interface TransformedItem {
   guid: string;
 }
 
-export function transformItems(items: RawFeedItem[], source: DataSource): TransformedItem[] {
+export function transformItems(items: RawFeedItem[], _source: DataSource): TransformedItem[] {
   const seenGuids = new Set<string>();
   const transformed: TransformedItem[] = [];
 
