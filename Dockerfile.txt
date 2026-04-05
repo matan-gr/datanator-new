@@ -6,7 +6,7 @@ ENV npm_config_update_notifier=false
 # Install dependencies
 RUN apk add --no-cache python3 make g++
 COPY package*.json ./
-RUN npm ci --loglevel=error
+RUN npm install --loglevel=error
 
 # Copy source code and build
 COPY . .
@@ -29,7 +29,7 @@ ENV npm_config_update_notifier=false
 # Adding build tools in case sqlite3 needs to build from source
 RUN apk add --no-cache python3 make g++
 COPY package*.json ./
-RUN npm ci --omit=dev --loglevel=error
+RUN npm install --omit=dev --loglevel=error
 
 # Copy built assets and source code
 COPY --from=builder /app/dist ./dist
